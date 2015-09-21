@@ -806,11 +806,15 @@ meta_window_actor_has_shadow (MetaWindowActor *self)
 
   /*
    * Always put a shadow around windows with a frame - This should override
-   * the restriction about not putting a shadow around ARGB windows.
+   * the restriction about not putting a shadow around ARGB windows. 
+   * Dirty hack: Also put a shadow around windows with class name "conky_with_shadow" and without a frame 
+   * (own_window_class in conky manually set the WM_CLASS name).
    */
   if (priv->window)
     {
       if (meta_window_get_frame (priv->window))
+        return TRUE;
+      else if (priv->window->res_class != NULL && strcmp (priv->window->res_class, "conky_with_shadow") == 0)
         return TRUE;
     }
 
