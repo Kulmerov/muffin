@@ -804,11 +804,6 @@ meta_window_actor_has_shadow (MetaWindowActor *self)
       meta_window_is_fullscreen (priv->window))
     return FALSE;
 
-  /* Don't shadow tiled windows of any type */
-
-  if (meta_window_get_tile_type (priv->window) != META_WINDOW_TILE_TYPE_NONE)
-    return FALSE;
-
   /*
    * Always put a shadow around windows with a frame - This should override
    * the restriction about not putting a shadow around ARGB windows.
