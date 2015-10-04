@@ -2460,110 +2460,37 @@ handle_toggle_above       (MetaDisplay    *display,
 
 static MetaTileMode
 get_new_tile_mode (MetaTileMode direction,
-                   MetaTileMode current)
+                   MetaWindow *window)
 {
-    MetaTileMode ret = META_TILE_NONE;
-    switch (current) {
-        case META_TILE_NONE:
-            ret = direction;
-            break;
-        case META_TILE_MAXIMIZE:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_LEFT;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_RIGHT;
-            else if (direction == META_TILE_TOP)
-                ret = direction;
-            else if (direction == META_TILE_BOTTOM)
-                ret = META_TILE_TOP;
-            else
-                ret = META_TILE_NONE;
-            break;
-        case META_TILE_LEFT:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_LEFT;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_NONE;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_ULC;
-            else
-                ret = META_TILE_LLC;
-            break;
-        case META_TILE_RIGHT:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_NONE;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_RIGHT;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_URC;
-            else
-                ret = META_TILE_LRC;
-            break;
-        case META_TILE_TOP:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_ULC;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_URC;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_MAXIMIZE;
-            else
-                ret = META_TILE_NONE;
-            break;
-        case META_TILE_BOTTOM:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_LLC;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_LRC;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_NONE;
-            else
-                ret = META_TILE_BOTTOM;
-            break;
-        case META_TILE_ULC:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_ULC;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_TOP;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_ULC;
-            else
-                ret = META_TILE_LEFT;
-            break;
-        case META_TILE_LLC:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_LLC;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_BOTTOM;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_LEFT;
-            else
-                ret = META_TILE_LLC;
-            break;
-        case META_TILE_URC:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_TOP;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_URC;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_URC;
-            else
-                ret = META_TILE_RIGHT;
-            break;
-        case META_TILE_LRC:
-            if (direction == META_TILE_LEFT)
-                ret = META_TILE_BOTTOM;
-            else if (direction == META_TILE_RIGHT)
-                ret = META_TILE_LRC;
-            else if (direction == META_TILE_TOP)
-                ret = META_TILE_RIGHT;
-            else
-                ret = META_TILE_LRC;
-            break;
-        default:
-            ret = current;
-            break;
-    }
-    return ret;
+  MetaTileMode new_mode = META_TILE_NONE;
+  MetaTileMode current_mode = window->tile_mode;
+  if (direction != current_mode) {
+    switch (direction) {
+      case META_TILE_TOP:
+        if (current_mode == META_TILE_MAXIMIZE) {
+          new_mode = META_TILE_NONE;
+        } else {
+          new_mode = META_TILE_MAXIMIZE;
+        }
+        break;
+      case META_TILE_BOTTOM:
+        new_mode = META_TILE_MINIMIZE;
+        break;
+      case META_TILE_RIGHT:
+        if (current_mode == META_TILE_LEFT) {
+          meta_window_unmaximize (window, META_MAXIMIZE_HORIZONTAL | META_MAXIMIZE_VERTICAL);
+        }
+        new_mode = direction;
+        break;
+      case META_TILE_LEFT:
+        if (current_mode == META_TILE_RIGHT) {
+          meta_window_unmaximize (window, META_MAXIMIZE_HORIZONTAL | META_MAXIMIZE_VERTICAL);
+        }
+        new_mode = direction;
+        break;
+    } 
+  }
+  return new_mode;
 }
 
 static void
@@ -2574,20 +2501,14 @@ handle_tile_action (MetaDisplay    *display,
                      MetaKeyBinding *binding,
                      gpointer        dummy)
 {
-  MetaTileMode mode = binding->handler->data;
+  MetaTileMode direction = binding->handler->data;
   MetaKeyBindingAction action = meta_prefs_get_keybinding_action (binding->name);
   gboolean snap = action == META_KEYBINDING_ACTION_PUSH_SNAP_LEFT ||
                   action == META_KEYBINDING_ACTION_PUSH_SNAP_RIGHT ||
                   action == META_KEYBINDING_ACTION_PUSH_SNAP_UP ||
                   action == META_KEYBINDING_ACTION_PUSH_SNAP_DOWN;
 
-  MetaTileMode new_mode = get_new_tile_mode (mode, window->tile_mode);
-  if (new_mode == window->tile_mode)
-    return;
-
-  if (!meta_window_can_tile (window, new_mode))
-    return;
-
+  MetaTileMode new_mode = get_new_tile_mode (direction, window);
   meta_window_tile (window, new_mode, snap);
 }
 

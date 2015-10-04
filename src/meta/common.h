@@ -290,7 +290,8 @@ typedef enum {
   META_TILE_LRC,
   META_TILE_TOP,
   META_TILE_BOTTOM,
-  META_TILE_MAXIMIZE
+  META_TILE_MAXIMIZE,
+  META_TILE_MINIMIZE
 } MetaTileMode;
 
 typedef enum {

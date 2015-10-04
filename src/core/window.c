@@ -4129,15 +4129,7 @@ void
 meta_window_unmaximize (MetaWindow        *window,
                         MetaMaximizeFlags  directions)
 {
-  /* Restore tiling if necessary */
-  if (window->tile_mode == META_TILE_LEFT ||
-      window->tile_mode == META_TILE_RIGHT)
-    {
-      window->maximized_horizontally = FALSE;
-      meta_window_real_tile (window, FALSE);
-      return;
-    }
-
+  window->tile_mode = META_TILE_NONE;
   meta_window_unmaximize_internal (window, directions, &window->saved_rect,
                                    NorthWestGravity);
 }
@@ -11777,6 +11769,7 @@ meta_window_can_tile (MetaWindow *window, MetaTileMode mode)
         return meta_window_can_tile_corner (window);
     case META_TILE_MAXIMIZE:
     case META_TILE_NONE:
+    case META_TILE_MINIMIZE:
         return TRUE;
     default:
         return FALSE;
@@ -11805,6 +11798,15 @@ meta_window_tile (MetaWindow *window,
         return FALSE;
 
   if (mode != META_TILE_NONE) {
+      if (mode == META_TILE_MAXIMIZE) {
+        meta_window_maximize (window, META_MAXIMIZE_VERTICAL |
+            META_MAXIMIZE_HORIZONTAL);
+        return TRUE;
+      }
+      if (mode == META_TILE_MINIMIZE) {
+          meta_window_minimize (window);
+          return TRUE;
+      }
       window->last_tile_mode = window->tile_mode;
       window->snap_queued = snap;
       window->tile_monitor_number = window->monitor->number;
@@ -11820,17 +11822,11 @@ meta_window_tile (MetaWindow *window,
       meta_window_real_tile (window, TRUE);
   } else {
       window->last_tile_mode = window->tile_mode;
-      window->tile_mode = mode;
       window->custom_snap_size = FALSE;
       meta_window_set_tile_type (window, META_WINDOW_TILE_TYPE_NONE);
-      window->tile_monitor_number = window->saved_maximize ? window->monitor->number
-                                                           : -1;
-      if (window->saved_maximize)
-        meta_window_maximize (window, META_MAXIMIZE_VERTICAL |
-                                      META_MAXIMIZE_HORIZONTAL);
-      else
-        meta_window_unmaximize (window, META_MAXIMIZE_VERTICAL |
-                                        META_MAXIMIZE_HORIZONTAL);
+      window->tile_monitor_number = window->monitor->number;
+      meta_window_unmaximize (window, META_MAXIMIZE_VERTICAL |
+            META_MAXIMIZE_HORIZONTAL);
   }
 
   return TRUE;
